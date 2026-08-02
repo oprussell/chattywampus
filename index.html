@@ -79,9 +79,8 @@ header h2 {
 
     
 .message.mine {
-    align-self:flex-end;
-    background:#313244;
-}    
+    align-self: flex-end;
+}
 
     
 .message .user {
@@ -424,6 +423,10 @@ function displayMessage(data){
 
 
     msg.className = "message";
+
+if (data.username.trim() === username.trim()) {
+    msg.classList.add("mine");
+}
 
 if (data.username === username) {
     msg.classList.add("mine");
