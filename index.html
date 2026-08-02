@@ -356,10 +356,11 @@ async function loadMessages(){
 
 
     const result =
-    await db
-    .from("messages")
-    .select("*")
-    .order("created_at");
+await db
+.from("messages")
+.select("*")
+.order("created_at", { ascending: false })
+.limit(30);
 
 
     if(result.error){
@@ -371,7 +372,7 @@ async function loadMessages(){
     }
 
 
-    result.data.forEach(displayMessage);
+    result.data.reverse().forEach(displayMessage);
 
 
 
@@ -658,13 +659,12 @@ await db
 })
 .select();
 
-console.log("SEND RESULT:", insert);
 
 if(insert.error){
     alert(insert.error.message);
 }
 else{
-    alert("Message inserted!");
+    
 }
 
 messageInput.value="";
