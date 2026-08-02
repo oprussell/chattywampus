@@ -1,44 +1,74 @@
-const SUPABASE_URL = "https://qlbgmbbudvykcdplvxxs.supabase.co";
-const SUPABASE_KEY = "sb_publishable_e1xK412znvhEPEAlPIWaSw_8SFKtAyO";
+const SUPABASE_URL =
+"https://qlbgmbbudvykcdplvxxs.supabase.co";
 
-const db = supabase.createClient(
+
+const SUPABASE_KEY =
+"sb_publishable_e1xK412znvhEPEAlPIWaSw_8SFKtAyO";
+
+
+const client = supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
 );
 
+
 let username = "";
 
-const messages = document.getElementById("messages");
+const chat =
+document.getElementById("chat");
+
+const status =
+document.getElementById("status");
 
 
-function join(){
+
+document.getElementById("join").onclick = () => {
 
     username =
-        document.getElementById("username").value.trim();
-
-    if(!username) return;
-
-    document.getElementById("login").style.display="none";
-
-    document.getElementById("status").innerText =
-        "Connected";
-
-    loadMessages();
-}
+    document.getElementById("username")
+    .value
+    .trim();
 
 
-async function loadMessages(){
-
-    const {data} =
-        await db
-        .from("messages")
-        .select("*")
-        .order("created_at");
-
-    data.forEach(addMessage);
+    if(!username)
+        return;
 
 
-    db.channel("chat")
+    document.getElementById("login-screen")
+    .style.display="none";
+
+
+    startChat();
+
+};
+
+
+
+async function startChat(){
+
+    status.innerText="Connected";
+
+
+    const {data,error}=await client
+    .from("messages")
+    .select("*")
+    .order("created_at");
+
+
+    if(error){
+
+        alert(error.message);
+        return;
+
+    }
+
+
+    data.forEach(showMessage);
+
+
+
+    client
+    .channel("messages")
     .on(
         "postgres_changes",
         {
@@ -47,64 +77,85 @@ async function loadMessages(){
             table:"messages"
         },
         payload=>{
-            addMessage(payload.new);
+
+            showMessage(payload.new);
+
         }
     )
     .subscribe();
+
 }
 
 
 
-function addMessage(msg){
-
-    if(document.getElementById("m"+msg.id))
-        return;
-
-    let div=document.createElement("div");
-
-    div.className="message";
-    div.id="m"+msg.id;
+function showMessage(msg){
 
 
-    div.innerHTML =
-    `<div class="user">${msg.username}</div>`;
+    if(
+        document.getElementById(
+            "msg-"+msg.id
+        )
+    )
+    return;
+
+
+
+    let box=document.createElement("div");
+
+    box.className="message";
+
+    box.id="msg-"+msg.id;
+
+
+
+    box.innerHTML=
+    `
+    <div class="username">
+    ${msg.username}
+    </div>
+    `;
+
 
 
     if(msg.type==="text"){
 
-        div.innerHTML +=
+        box.innerHTML +=
         `<div>${msg.content}</div>`;
 
     }
 
 
+
     if(msg.type==="image"){
 
-        div.innerHTML +=
+        box.innerHTML +=
         `<img src="${msg.file_url}">`;
 
     }
 
 
+
     if(msg.type==="video"){
 
-        div.innerHTML +=
+        box.innerHTML +=
         `<video controls src="${msg.file_url}"></video>`;
 
     }
 
 
+
     if(msg.type==="audio"){
 
-        div.innerHTML +=
+        box.innerHTML +=
         `<audio controls src="${msg.file_url}"></audio>`;
 
     }
 
 
+
     if(msg.type==="file"){
 
-        div.innerHTML +=
+        box.innerHTML +=
         `<a href="${msg.file_url}" target="_blank">
         ${msg.file_name}
         </a>`;
@@ -112,42 +163,69 @@ function addMessage(msg){
     }
 
 
-    messages.appendChild(div);
 
-    messages.scrollTop =
-        messages.scrollHeight;
+    chat.appendChild(box);
+
+    chat.scrollTop =
+    chat.scrollHeight;
+
 }
+
+
+
+
+document.getElementById("send").onclick =
+send;
 
 
 
 async function send(){
 
+
     let text =
-    document.getElementById("text");
+    document.getElementById("message");
+
 
     let file =
-    document.getElementById("file").files[0];
+    document.getElementById("file")
+    .files[0];
+
 
 
     if(file){
+
 
         let path =
         Date.now()+"-"+file.name;
 
 
-        await db.storage
+
+        let upload =
+        await client.storage
         .from("chat-files")
         .upload(path,file);
 
 
+
+        if(upload.error){
+
+            alert(upload.error.message);
+            return;
+
+        }
+
+
+
         let url =
-        db.storage
+        client.storage
         .from("chat-files")
         .getPublicUrl(path)
         .data.publicUrl;
 
 
+
         let type="file";
+
 
         if(file.type.startsWith("image"))
             type="image";
@@ -159,7 +237,10 @@ async function send(){
             type="audio";
 
 
-        await db.from("messages").insert({
+
+        await client
+        .from("messages")
+        .insert({
 
             username,
             type,
@@ -169,24 +250,38 @@ async function send(){
         });
 
 
+
         document.getElementById("file").value="";
 
         return;
+
     }
 
 
 
     if(text.value.trim()){
 
-        await db.from("messages").insert({
+
+        let result =
+        await client
+        .from("messages")
+        .insert({
 
             username,
-            type:"text",
-            content:text.value
+            content:text.value,
+            type:"text"
 
         });
 
+
+
+        if(result.error)
+            alert(result.error.message);
+
+
+
         text.value="";
+
     }
 
 }
