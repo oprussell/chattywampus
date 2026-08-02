@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>School LAN Chat</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+    --bg-color:#1e1e2e;
+    --panel-color:#252538;
+    --text-color:#cdd6f4;
+    --accent-color:#89b4fa;
+    --border-color:#313244;
+    --hover-color:#b4befe;
+}
+
+* {
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:system-ui,-apple-system,sans-serif;
+}
+
+body {
+    background-color:var(--bg-color);
+    color:var(--text-color);
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+}
+
+
+header {
+    padding:15px;
+    background:var(--panel-color);
+    border-bottom:1px solid var(--border-color);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+header h2 {
+    font-size:1.2rem;
+    color:var(--accent-color);
+}
+
+#status {
+    font-size:.85rem;
+    color:#a6e3a1;
+    background:rgba(166,227,161,.1);
+    padding:4px 8px;
+    border-radius:4px;
+}
+
+
+#chat-container {
+    flex:1;
+    padding:20px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+
+.message {
+    background:var(--panel-color);
+    padding:10px 15px;
+    border-radius:8px;
+    max-width:75%;
+    border:1px solid var(--border-color);
+    word-break:break-word;
+}
+
+
+.message .user {
+    font-weight:bold;
+    font-size:.8rem;
+    color:var(--accent-color);
+    margin-bottom:4px;
+}
+
+
+.message .text {
+    font-size:.95rem;
+    line-height:1.4;
+}
+
+
+.message img,
+.message video,
+.message audio {
+    max-width:100%;
+    border-radius:6px;
+    margin-top:8px;
+    display:block;
+}
+
+
+.message audio {
+    width:100%;
+}
+
+
+#input-container {
+    padding:15px;
+    background:var(--panel-color);
+    border-top:1px solid var(--border-color);
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+
+
+input[type="text"] {
+    flex:1;
+    background:var(--bg-color);
+    border:1px solid var(--border-color);
+    padding:10px 15px;
+    border-radius:6px;
+    color:var(--text-color);
+    outline:none;
+}
+
+
+input[type="text"]:focus {
+    border-color:var(--accent-color);
+}
+
+
+.file-btn {
+    background:transparent;
+    border:1px solid var(--border-color);
+    color:var(--text-color);
+    padding:10px 14px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:.9rem;
+}
+
+
+.file-btn:hover {
+    background:var(--border-color);
+}
+
+
+#file-input {
+    display:none;
+}
+
+
+button.send-btn {
+    background:var(--accent-color);
+    color:#11111b;
+    border:none;
+    padding:10px 20px;
+    border-radius:6px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+
+button.send-btn:hover {
+    background:var(--hover-color);
+}
+
+
+#login-modal {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.8);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:10;
+}
+
+
+.modal-box {
+    background:var(--panel-color);
+    padding:30px;
+    border-radius:12px;
+    border:1px solid var(--border-color);
+    width:300px;
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+
+.modal-box h3 {
+    text-align:center;
+    color:var(--accent-color);
+}
+
+
+.modal-box input {
+    width:100%;
+    background:var(--bg-color);
+    border:1px solid var(--border-color);
+    padding:10px;
+    border-radius:6px;
+    color:var(--text-color);
+}
+
+
+.modal-box button {
+    width:100%;
+    padding:10px;
+    background:var(--accent-color);
+    border:none;
+    border-radius:6px;
+    font-weight:bold;
+    cursor:pointer;
+    color:#11111b;
+}
+</style>
+</head>
+<body>
+
+<div id="login-modal">
+    <div class="modal-box">
+        <h3>Enter School Chat</h3>
+
+        <input 
+            type="text" 
+            id="username-input" 
+            placeholder="Your Display Name..."
+            maxlength="15"
+        >
+
+        <button id="join-btn">
+            Join Room
+        </button>
+    </div>
+</div>
+
+
+<header>
+    <h2>School Network Chat</h2>
+    <div id="status">
+        Connecting to network...
+    </div>
+</header>
+
+
+<div id="chat-container"></div>
+
+
+<div id="input-container">
+
+    <label for="file-input" class="file-btn">
+        📎
+    </label>
+
+    <input 
+        type="file"
+        id="file-input"
+        accept="image/jpeg,image/png,video/webm,video/mp4,audio/mp3,audio/wav,audio/ogg"
+    >
+
+    <input 
+        type="text"
+        id="message-input"
+        placeholder="Type a message or drop media..."
+    >
+
+    <button class="send-btn" id="send-btn">
+        Send
+    </button>
+
+</div>
+
+
+
+<script>
+
+const SUPABASE_URL =
+"https://qlbgmbbudvykcdplvxxs.supabase.co";
+
+
+const SUPABASE_KEY =
+"sb_publishable_e1xK412znvhEPEAlPIWaSw_8SFKtAyO";
+
+
+const db =
+supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+
+
+let username = "";
+
+const modal =
+document.getElementById("login-modal");
+
+const joinBtn =
+document.getElementById("join-btn");
+
+const usernameInput =
+document.getElementById("username-input");
+
+const chatContainer =
+document.getElementById("chat-container");
+
+const messageInput =
+document.getElementById("message-input");
+
+const sendBtn =
+document.getElementById("send-btn");
+
+const fileInput =
+document.getElementById("file-input");
+
+const statusEl =
+document.getElementById("status");
+
+
+
+
+
+joinBtn.onclick = () => {
+
+    const name =
+    usernameInput.value.trim();
+
+
+    if(!name)
+        return;
+
+
+    username = name;
+
+    modal.style.display="none";
+
+    statusEl.innerText =
+    "Online (Connected)";
+
+
+    loadMessages();
+
+};
+
+
+
+
+
+async function loadMessages(){
+
+
+    const result =
+    await db
+    .from("messages")
+    .select("*")
+    .order("created_at");
+
+
+    if(result.error){
+
+        statusEl.innerText =
+        result.error.message;
+
+        return;
+    }
+
+
+    result.data.forEach(displayMessage);
+
+
+
+    db.channel("school-chat")
+    .on(
+        "postgres_changes",
+        {
+            event:"INSERT",
+            schema:"public",
+            table:"messages"
+        },
+        payload => {
+
+            displayMessage(
+                payload.new
+            );
+
+        }
+    )
+    .subscribe();
+
+}
+
+
+
+
+
+
+function displayMessage(data){
+
+
+    if(
+        document.getElementById(
+            "msg-"+data.id
+        )
+    )
+    return;
+
+
+
+    const msg =
+    document.createElement("div");
+
+
+    msg.className="message";
+
+    msg.id =
+    "msg-"+data.id;
+
+
+
+    const user =
+    document.createElement("div");
+
+
+    user.className="user";
+
+    user.innerText =
+    data.username;
+
+
+    msg.appendChild(user);
+
+
+
+
+    if(data.type==="text"){
+
+        const text =
+        document.createElement("div");
+
+        text.className="text";
+
+        text.innerText =
+        data.content;
+
+        msg.appendChild(text);
+
+    }
+
+
+
+    if(data.file_url){
+
+        if(data.type==="image"){
+
+            const img =
+            document.createElement("img");
+
+            img.src =
+            data.file_url;
+
+            msg.appendChild(img);
+
+        }
+
+
+        else if(data.type==="video"){
+
+            const video =
+            document.createElement("video");
+
+            video.src =
+            data.file_url;
+
+            video.controls=true;
+
+            msg.appendChild(video);
+
+        }
+
+
+        else if(data.type==="audio"){
+
+            const audio =
+            document.createElement("audio");
+
+            audio.src =
+            data.file_url;
+
+            audio.controls=true;
+
+            msg.appendChild(audio);
+
+        }
+
+
+        else {
+
+            const link =
+            document.createElement("a");
+
+            link.href =
+            data.file_url;
+
+            link.target="_blank";
+
+            link.innerText =
+            data.file_name;
+
+            msg.appendChild(link);
+
+        }
+
+    }
+
+
+
+    chatContainer.appendChild(msg);
+
+
+    chatContainer.scrollTop =
+    chatContainer.scrollHeight;
+
+}
+
+
+
+
+
+
+sendBtn.onclick =
+sendMessage;
+
+
+
+
+messageInput.onkeypress =
+(e)=>{
+
+    if(e.key==="Enter")
+        sendMessage();
+
+};
+
+
+
+
+
+async function sendMessage(){
+
+
+    const text =
+    messageInput.value.trim();
+
+
+    const file =
+    fileInput.files[0];
+
+
+
+    if(file){
+
+
+        const filename =
+        Date.now()+"-"+file.name;
+
+
+
+        const upload =
+        await db.storage
+        .from("chat-files")
+        .upload(
+            filename,
+            file
+        );
+
+
+
+        if(upload.error){
+
+            alert(upload.error.message);
+
+            return;
+
+        }
+
+
+
+        const url =
+        db.storage
+        .from("chat-files")
+        .getPublicUrl(filename)
+        .data
+        .publicUrl;
+
+
+
+        let type="file";
+
+
+        if(file.type.startsWith("image"))
+            type="image";
+
+        else if(file.type.startsWith("video"))
+            type="video";
+
+        else if(file.type.startsWith("audio"))
+            type="audio";
+
+
+
+
+        const insert =
+        await db
+        .from("messages")
+        .insert({
+
+            username,
+            type,
+            file_url:url,
+            file_name:file.name
+
+        });
+
+
+
+        if(insert.error)
+            alert(insert.error.message);
+
+
+
+        fileInput.value="";
+
+        return;
+
+    }
+
+
+
+
+    if(text){
+
+
+        const insert =
+        await db
+        .from("messages")
+        .insert({
+
+            username,
+            content:text,
+            type:"text"
+
+        });
+
+
+
+        if(insert.error)
+            alert(insert.error.message);
+
+
+
+        messageInput.value="";
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
