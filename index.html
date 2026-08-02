@@ -115,7 +115,6 @@ header h2 {
     width:100%;
 }
 
-
 #input-container {
     padding:15px;
     background:var(--panel-color);
@@ -254,6 +253,21 @@ button.send-btn:hover {
 #attachment-preview .filename {
     font-size:.9rem;
 }
+
+.remove-file {
+    margin-left:auto;
+    border:1px solid black;
+    background:transparent;
+    cursor:pointer;
+    padding:4px 8px;
+    font-size:16px;
+    font-family:inherit;
+}
+
+.remove-file:hover {
+    background:black;
+    color:white;
+}        
     
 </style>
 </head>
@@ -365,11 +379,7 @@ document.getElementById("send-btn");
 
 fileInput.addEventListener("change", (e)=>{
 
-    console.log("FILE CHANGED");
-
     const file = e.target.files[0];
-
-    console.log(file);
 
     if(!file)
         return;
@@ -398,6 +408,28 @@ fileInput.addEventListener("change", (e)=>{
     filename.innerText = file.name;
 
     attachmentPreview.appendChild(filename);
+
+
+    const removeBtn = document.createElement("button");
+
+    removeBtn.innerText = "✕";
+
+    removeBtn.className = "remove-file";
+
+    removeBtn.onclick = () => {
+
+        selectedFile = null;
+
+        fileInput.value = "";
+
+        attachmentPreview.style.display = "none";
+
+        attachmentPreview.innerHTML = "";
+
+    };
+
+
+    attachmentPreview.appendChild(removeBtn);
 
 
     attachmentPreview.style.display = "flex";
