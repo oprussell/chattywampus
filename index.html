@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chattywampus</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div id="login">
+    <h2>Enter Chattywampus</h2>
+    <input id="username" placeholder="Display name">
+    <button onclick="join()">Join</button>
+</div>
+
+<header>
+    <h2>Chattywampus</h2>
+    <span id="status">Connecting...</span>
+</header>
+
+<div id="messages"></div>
+
+<div id="input">
+    <input id="text" placeholder="Message...">
+    <input id="file" type="file">
+    <button onclick="send()">Send</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
