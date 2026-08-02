@@ -77,7 +77,13 @@ header h2 {
     word-break:break-word;
 }
 
+    
+.message.mine {
+    align-self:flex-end;
+    background:#313244;
+}    
 
+    
 .message .user {
     font-weight:bold;
     font-size:.8rem;
@@ -417,7 +423,11 @@ function displayMessage(data){
     document.createElement("div");
 
 
-    msg.className="message";
+    msg.className = "message";
+
+if (data.username === username) {
+    msg.classList.add("mine");
+}
 
     msg.id =
     "msg-"+data.id;
