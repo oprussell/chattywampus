@@ -533,8 +533,10 @@ function displayMessage(data){
 
 
 
-sendBtn.onclick =
-sendMessage;
+sendBtn.onclick = () => {
+    console.log("SEND BUTTON CLICKED");
+    sendMessage();
+};
 
 
 
