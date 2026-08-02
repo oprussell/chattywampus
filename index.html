@@ -223,6 +223,10 @@ button.send-btn:hover {
     font-weight:bold;
     cursor:pointer;
     color:#11111b;
+
+.message.mine {
+    align-self: flex-end;
+    margin-left: auto;
 }
 </style>
 </head>
@@ -425,10 +429,6 @@ function displayMessage(data){
     msg.className = "message";
 
 if (data.username.trim() === username.trim()) {
-    msg.classList.add("mine");
-}
-
-if (data.username === username) {
     msg.classList.add("mine");
 }
 
