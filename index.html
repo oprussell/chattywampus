@@ -116,6 +116,10 @@ header h2 {
     padding:15px;
     background:var(--panel-color);
     border-top:1px solid var(--border-color);
+}
+
+
+#send-row {
     display:flex;
     gap:10px;
     align-items:center;
@@ -223,11 +227,30 @@ button.send-btn:hover {
     font-weight:bold;
     cursor:pointer;
     color:#11111b;
-
-.message.mine {
-    align-self: flex-end;
-    margin-left: auto;
 }
+
+#attachment-preview {
+    display:none;
+    margin-bottom:10px;
+    background:var(--panel-color);
+    border:1px solid var(--border-color);
+    border-radius:8px;
+    padding:8px;
+    align-items:center;
+    gap:10px;
+}
+
+#attachment-preview img {
+    width:60px;
+    height:60px;
+    object-fit:cover;
+    border-radius:6px;
+}
+
+#attachment-preview .filename {
+    font-size:.9rem;
+}
+    
 </style>
 </head>
 <body>
@@ -263,25 +286,31 @@ button.send-btn:hover {
 
 <div id="input-container">
 
-    <label for="file-input" class="file-btn">
-        📎
-    </label>
+    <div id="attachment-preview"></div>
 
-    <input 
-        type="file"
-        id="file-input"
-        accept="image/jpeg,image/png,video/webm,video/mp4,audio/mp3,audio/wav,audio/ogg"
-    >
+    <div id="send-row">
 
-    <input 
-        type="text"
-        id="message-input"
-        placeholder="Type a message or drop media..."
-    >
+        <label for="file-input" class="file-btn">
+            📎
+        </label>
 
-    <button class="send-btn" id="send-btn">
-        Send
-    </button>
+        <input 
+            type="file" 
+            id="file-input" 
+            accept="image/jpeg,image/png,video/webm,video/mp4,audio/mp3,audio/wav,audio/ogg"
+        >
+
+        <input 
+            type="text"
+            id="message-input"
+            placeholder="Type a message or drop media..."
+        >
+
+        <button class="send-btn" id="send-btn">
+            Send
+        </button>
+
+    </div>
 
 </div>
 
@@ -303,7 +332,13 @@ supabase.createClient(
     SUPABASE_KEY
 );
 
+const attachmentPreview =
+document.getElementById("attachment-preview");
 
+let selectedFile = null;
+
+const fileInput =
+document.getElementById("file-input");    
 
 let username = "";
 
@@ -323,10 +358,45 @@ const messageInput =
 document.getElementById("message-input");
 
 const sendBtn =
-document.getElementById("send-btn");
+document.getElementById("send-btn");    
 
-const fileInput =
-document.getElementById("file-input");
+fileInput.addEventListener("change", (e)=>{
+
+    const file = e.target.files[0];
+
+    if(!file)
+        return;
+
+
+    selectedFile = file;
+
+    attachmentPreview.innerHTML = "";
+
+
+    if(file.type.startsWith("image/")){
+
+        const img = document.createElement("img");
+
+        img.src = URL.createObjectURL(file);
+
+        attachmentPreview.appendChild(img);
+
+    }
+
+
+    const filename = document.createElement("div");
+
+    filename.className = "filename";
+
+    filename.innerText = file.name;
+
+    attachmentPreview.appendChild(filename);
+
+
+    attachmentPreview.style.display = "flex";
+
+});
+
 
 const statusEl =
 document.getElementById("status");
@@ -574,9 +644,7 @@ async function sendMessage(){
     messageInput.value.trim();
 
 
-    const file =
-    fileInput.files[0];
-
+    const file = selectedFile;
 
 
     if(file){
@@ -650,7 +718,10 @@ async function sendMessage(){
 
 
 
-        fileInput.value="";
+        selectedFile = null;
+fileInput.value = "";
+attachmentPreview.style.display = "none";
+attachmentPreview.innerHTML = "";
 
         return;
 
@@ -688,8 +759,6 @@ messageInput.value="";
             alert(insert.error.message);
 
 
-
-        messageInput.value="";
 
     }
 
