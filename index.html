@@ -362,7 +362,11 @@ document.getElementById("send-btn");
 
 fileInput.addEventListener("change", (e)=>{
 
+    console.log("FILE CHANGED");
+
     const file = e.target.files[0];
+
+    console.log(file);
 
     if(!file)
         return;
@@ -723,7 +727,6 @@ fileInput.value = "";
 attachmentPreview.style.display = "none";
 attachmentPreview.innerHTML = "";
 
-        return;
 
     }
 
