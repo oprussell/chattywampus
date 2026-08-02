@@ -647,15 +647,25 @@ async function sendMessage(){
 
 
         const insert =
-        await db
-        .from("messages")
-        .insert({
+await db
+.from("messages")
+.insert({
+    username: username,
+    content: text,
+    type: "text"
+})
+.select();
 
-            username,
-            content:text,
-            type:"text"
+console.log("SEND RESULT:", insert);
 
-        });
+if(insert.error){
+    alert(insert.error.message);
+}
+else{
+    alert("Message inserted!");
+}
+
+messageInput.value="";
 
 
 
